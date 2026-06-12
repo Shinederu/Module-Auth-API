@@ -1,6 +1,7 @@
 {
   "name": "shinederu/auth-api",
   "description": "Shinede authentication backend API",
+  "license": "proprietary",
   "type": "project",
   "require": {
     "php": ">=8.1",

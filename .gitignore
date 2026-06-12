@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+
+vendor/
+
+*.log
+*.tmp
+*.bak
+cache/
+tmp/
+temp/
+.phpunit.cache/
+
+.DS_Store
+Thumbs.db
