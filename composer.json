@@ -1,6 +1,6 @@
 {
   "name": "shinederu/auth-api",
-  "description": "Shinederu authentication backend API",
+  "description": "Shinede authentication backend API",
   "type": "project",
   "require": {
     "php": ">=8.1",

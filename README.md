@@ -92,7 +92,7 @@ Get-ChildItem P:\DEV\GitHub\Module-Auth-API -Recurse -Filter *.php |
 
 ## Notes de reprise
 
-- Le panneau frontend principal est dans `App-ShinedeHub`.
+- Le panneau frontend principal est dans `App-ShinedeHub` (ShinedeHub).
 - Les droits et permissions sont administres depuis `/permissions`.
 - `users.role = 'admin'` reste un fallback historique; la source durable des
   droits est le modele `core_*`.
