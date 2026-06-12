@@ -14,6 +14,7 @@ Il porte:
 - moderation de comptes (`is_banned`, motif et suppression des sessions);
 - endpoints admin utilisateurs;
 - endpoints admin du modele de droits centralises `core_*`.
+- snapshot `project_access` des projets actifs, dont `arcadia`.
 
 ## Deploiement
 
@@ -73,6 +74,10 @@ Tables principales:
 - `auth_password_reset_tokens`;
 - `auth_email_verification_tokens`;
 - `core_*` via `Module-ShinedeCore-PHP`.
+
+Le champ utilisateur `project_access.permissions.arcadia` expose les permissions
+`servers_view`, `servers_manage`, `players_manage`, `actions_execute` et
+`admin` quand le seed `core_*` Arcadia est applique.
 
 Migrations:
 
