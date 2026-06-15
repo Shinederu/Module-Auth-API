@@ -38,7 +38,8 @@ class UserController
         }
 
         $authService = new AuthService();
-        if (!$authService->getUserForAdmin($targetUserId)) {
+        $targetUser = $authService->getUserForAdmin($targetUserId);
+        if (!$targetUser) {
             json_error('Utilisateur non trouve', 404);
         }
 
@@ -65,6 +66,28 @@ class UserController
             }
 
             if ($isBanned) {
+                (new SessionService())->deleteAllSessionsForUser($targetUserId);
+            }
+        }
+
+        if ($this->hasPasswordPayload($data)) {
+            $password = (string)($data['password'] ?? $data['new_password'] ?? '');
+            $passwordConfirm = (string)($data['passwordConfirm'] ?? $data['password_confirm'] ?? $data['new_password_confirm'] ?? '');
+
+            $this->validatePassword($password, $passwordConfirm);
+
+            if ($this->isPrivilegedUser($targetUser) && $targetUserId !== $requestUserId) {
+                $requestUser = $authService->getUserForAdmin($requestUserId);
+                if (!$this->isPrivilegedUser($requestUser)) {
+                    json_error('Seul un super-admin peut modifier le mot de passe d\'un super-admin', 403);
+                }
+            }
+
+            if (!$authService->updatePassword($targetUserId, $password)) {
+                json_error('Erreur serveur pendant la mise a jour du mot de passe', 500);
+            }
+
+            if ($targetUserId !== $requestUserId) {
                 (new SessionService())->deleteAllSessionsForUser($targetUserId);
             }
         }
@@ -225,6 +248,44 @@ class UserController
         if (strlen($username) > USERNAME_MAX_LENGTH) {
             json_error("Nom d'utilisateur trop long (maximum " . USERNAME_MAX_LENGTH . " caracteres)", 400);
         }
+    }
+
+    private function hasPasswordPayload(array $data): bool
+    {
+        return array_key_exists('password', $data)
+            || array_key_exists('passwordConfirm', $data)
+            || array_key_exists('password_confirm', $data)
+            || array_key_exists('new_password', $data)
+            || array_key_exists('new_password_confirm', $data);
+    }
+
+    private function validatePassword(string $password, string $passwordConfirm): void
+    {
+        if (strlen($password) < 8) {
+            json_error('Mot de passe trop court (minimum 8 caracteres)', 400);
+        }
+
+        if ($password !== $passwordConfirm) {
+            json_error('Les mots de passe ne correspondent pas', 400);
+        }
+    }
+
+    private function isPrivilegedUser($user): bool
+    {
+        if (!is_array($user)) {
+            return false;
+        }
+
+        if (filter_var($user['is_admin'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            return true;
+        }
+
+        $access = $user['project_access'] ?? null;
+        if (!is_array($access)) {
+            return false;
+        }
+
+        return filter_var($access['is_global_admin'] ?? false, FILTER_VALIDATE_BOOLEAN);
     }
 
     private function extractAvatarBytes(array $data): string

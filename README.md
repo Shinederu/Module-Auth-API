@@ -78,8 +78,14 @@ Actions admin Auth avec permission `auth.users.manage`:
 
 - `GET action=listUsers`
 - `PUT action=updateUserRole`
-- `PUT action=updateUserAdmin`
+- `PUT action=updateUserAdmin` pour pseudo, blocage et changement de mot de passe admin
 - `POST action=updateUserAvatarAdmin`
+
+`updateUserAdmin` accepte notamment `userId`, `username`, `is_banned`,
+`ban_reason`, `password` et `passwordConfirm`. Un changement de mot de passe
+admin invalide les sessions de l'utilisateur cible quand il ne s'agit pas du
+compte administrateur courant. Le mot de passe d'un super-admin ne peut etre
+modifie que par lui-meme ou par un autre super-admin.
 
 Actions super-admin avec `core.super_admin`:
 
