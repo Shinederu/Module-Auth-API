@@ -183,6 +183,12 @@ Parametres principaux:
 Protections:
 
 - Le projet `core` ne peut pas etre desactive.
+- Les codes `arcadia` et `corelink` sont reserves a l'historique et a la
+  passerelle technique Wake: ils ne peuvent pas etre actives comme projets
+  utilisateur, pas plus que leurs roles ou permissions.
+- Les assignations historiques `arcadia`/`corelink` sont conservees, mais
+  l'API refuse d'en ajouter de nouvelles. Une liste de roles vide reste acceptee
+  pour retirer une ancienne assignation.
 - Le role `core.super_admin` ne peut pas etre desactive.
 - Un super-admin ne peut pas retirer son propre role `core.super_admin`.
 - Les permissions assignees a un role doivent appartenir au meme projet.
@@ -249,19 +255,14 @@ Permissions actuellement projetees:
 - `melodyquest.catalog.manage` -> `permissions.melodyquest.catalog_manage`
 - `box.files.manage` -> `permissions.box.files_manage`
 - `wake.devices.wake` -> `permissions.wake.devices_wake`
+- `wake.devices.shutdown` -> `permissions.wake.devices_shutdown`
 - `wake.devices.manage` -> `permissions.wake.devices_manage`
 - `wake.users.manage` -> `permissions.wake.users_manage`
-- `arcadia.servers.view` -> `permissions.arcadia.servers_view`
-- `arcadia.servers.manage` -> `permissions.arcadia.servers_manage`
-- `arcadia.players.manage` -> `permissions.arcadia.players_manage`
-- `arcadia.actions.execute` -> `permissions.arcadia.actions_execute`
-- `arcadia.admin` -> `permissions.arcadia.admin`
 
-Note de reprise: le code liste actuellement les projets `core`, `auth`, `main`,
-`melodyquest`, `box`, `wake` et `arcadia`. `corelink` existe dans le contrat
-workspace, mais n'est pas encore projete par ce snapshot Auth. Ne pas l'ajouter
-depuis ce repo sans demande explicite incluant Auth/permissions et le besoin
-frontend correspondant.
+Le snapshot liste uniquement les produits actifs `core`, `auth`, `main`,
+`melodyquest`, `box` et `wake`. `arcadia` est archive et `corelink` est la
+passerelle technique de l'agent Wake; aucun des deux n'est projete comme produit
+utilisateur.
 
 ## Base de donnees
 

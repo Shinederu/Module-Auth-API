@@ -5,6 +5,8 @@ require_once __DIR__ . '/../../core/services/ProjectAccessService.php';
 
 class CoreAccessAdminService
 {
+    private const FORCED_INACTIVE_PROJECT_CODES = ['arcadia', 'corelink'];
+
     private ?PDO $pdo = null;
     private ?bool $hasUsersIsAdminColumn = null;
 
@@ -65,6 +67,7 @@ class CoreAccessAdminService
             if ($existing['code'] === 'core' && $isActive !== 1) {
                 throw new InvalidArgumentException('Le projet core ne peut pas etre desactive.');
             }
+            $this->assertProjectActivationAllowed($existing['code'], $isActive);
 
             $stmt = $db->prepare(
                 'UPDATE core_projects
@@ -85,6 +88,7 @@ class CoreAccessAdminService
         if ($code === '') {
             throw new InvalidArgumentException('Code de projet requis.');
         }
+        $this->assertProjectActivationAllowed($code, $isActive);
 
         $stmt = $db->prepare(
             'INSERT INTO core_projects (code, name, description, is_active)
@@ -121,6 +125,7 @@ class CoreAccessAdminService
             if ($existing['project_code'] === 'core' && $existing['role_key'] === 'super_admin' && $isActive !== 1) {
                 throw new InvalidArgumentException('Le role core.super_admin ne peut pas etre desactive.');
             }
+            $this->assertProjectActivationAllowed($existing['project_code'], $isActive);
 
             $stmt = $db->prepare(
                 'UPDATE core_project_roles
@@ -140,12 +145,14 @@ class CoreAccessAdminService
 
         $projectId = $this->intValue($data['project_id'] ?? 0);
         $roleKey = $this->keyValue($data['role_key'] ?? '', 64);
-        if ($projectId <= 0 || !$this->getProjectById($projectId)) {
+        $project = $projectId > 0 ? $this->getProjectById($projectId) : null;
+        if (!$project) {
             throw new InvalidArgumentException('Projet invalide.');
         }
         if ($roleKey === '') {
             throw new InvalidArgumentException('Cle de role requise.');
         }
+        $this->assertProjectActivationAllowed($project['code'], $isActive);
 
         $stmt = $db->prepare(
             'INSERT INTO core_project_roles (project_id, role_key, label, description, sort_order, is_active)
@@ -176,9 +183,11 @@ class CoreAccessAdminService
 
         $db = $this->db();
         if ($id > 0) {
-            if (!$this->getPermissionById($id)) {
+            $existing = $this->getPermissionById($id);
+            if (!$existing) {
                 throw new RuntimeException('Permission introuvable.');
             }
+            $this->assertProjectActivationAllowed($existing['project_code'], $isActive);
 
             $stmt = $db->prepare(
                 'UPDATE core_project_permissions
@@ -197,12 +206,14 @@ class CoreAccessAdminService
 
         $projectId = $this->intValue($data['project_id'] ?? 0);
         $permissionKey = $this->permissionKeyValue($data['permission_key'] ?? '', 96);
-        if ($projectId <= 0 || !$this->getProjectById($projectId)) {
+        $project = $projectId > 0 ? $this->getProjectById($projectId) : null;
+        if (!$project) {
             throw new InvalidArgumentException('Projet invalide.');
         }
         if ($permissionKey === '') {
             throw new InvalidArgumentException('Cle de permission requise.');
         }
+        $this->assertProjectActivationAllowed($project['code'], $isActive);
 
         $stmt = $db->prepare(
             'INSERT INTO core_project_permissions (project_id, permission_key, label, description, is_active)
@@ -277,8 +288,14 @@ class CoreAccessAdminService
         if ($userId <= 0 || !$this->userExists($userId)) {
             throw new InvalidArgumentException('Utilisateur invalide.');
         }
-        if (!$this->getProjectByCode($projectCode)) {
+        $project = $this->getProjectByCode($projectCode);
+        if (!$project) {
             throw new InvalidArgumentException('Projet invalide.');
+        }
+        if (in_array($projectCode, self::FORCED_INACTIVE_PROJECT_CODES, true) && $roleKeys !== []) {
+            throw new InvalidArgumentException(
+                'Les assignations utilisateur sont desactivees pour ce projet archive ou technique.'
+            );
         }
         if ($requestUserId === $userId && $projectCode === 'core' && !in_array('super_admin', $roleKeys, true)) {
             throw new InvalidArgumentException('Vous ne pouvez pas retirer votre propre role super-admin.');
@@ -476,6 +493,21 @@ class CoreAccessAdminService
         $stmt->execute(['code' => $code]);
         $row = $stmt->fetch();
         return is_array($row) ? ['id' => (int)$row['id'], 'code' => (string)$row['code']] : null;
+    }
+
+    private function assertProjectActivationAllowed(string $projectCode, int $isActive): void
+    {
+        if ($isActive !== 1 || !in_array($projectCode, self::FORCED_INACTIVE_PROJECT_CODES, true)) {
+            return;
+        }
+
+        if ($projectCode === 'arcadia') {
+            throw new InvalidArgumentException('Le projet Arcadia est archive et ne peut pas etre reactive.');
+        }
+
+        throw new InvalidArgumentException(
+            'Corelink est une passerelle technique de Wake et ne peut pas etre active comme projet utilisateur.'
+        );
     }
 
     private function getRoleById(int $id): ?array

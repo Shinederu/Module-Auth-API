@@ -189,7 +189,7 @@ class AuthService
         }
 
         $access = $this->projectAccess();
-        $projects = ['core', 'auth', 'main', 'melodyquest', 'box', 'wake', 'arcadia'];
+        $projects = ['core', 'auth', 'main', 'melodyquest', 'box', 'wake'];
         $roles = [];
         foreach ($projects as $projectCode) {
             $roles[$projectCode] = $access->getUserProjectRoleKeys($userId, $projectCode);
@@ -213,15 +213,9 @@ class AuthService
                 ],
                 'wake' => [
                     'devices_wake' => $access->hasPermission($userId, 'wake', 'devices.wake'),
+                    'devices_shutdown' => $access->hasPermission($userId, 'wake', 'devices.shutdown'),
                     'devices_manage' => $access->hasPermission($userId, 'wake', 'devices.manage'),
                     'users_manage' => $access->hasPermission($userId, 'wake', 'users.manage'),
-                ],
-                'arcadia' => [
-                    'servers_view' => $access->hasPermission($userId, 'arcadia', 'servers.view'),
-                    'servers_manage' => $access->hasPermission($userId, 'arcadia', 'servers.manage'),
-                    'players_manage' => $access->hasPermission($userId, 'arcadia', 'players.manage'),
-                    'actions_execute' => $access->hasPermission($userId, 'arcadia', 'actions.execute'),
-                    'admin' => $access->hasPermission($userId, 'arcadia', 'admin'),
                 ],
             ],
         ];
