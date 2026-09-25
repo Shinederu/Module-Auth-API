@@ -366,6 +366,15 @@ appels HTTP Auth ou Core.
 
 ## Dependances inter-projets
 
+Versions verrouillees le 2026-09-25 dans `composer.lock`: Medoo 2.6.0,
+PHPMailer 7.1.1, phpdotenv 5.7.0, result-type 1.2.0, phpoption 1.10.0,
+polyfill-ctype/php80 1.37.0 et polyfill-mbstring 1.38.2. Le minimum PHP
+8.1 est conserve dans la resolution Composer; checks locaux sous PHP 8.4.
+PHPMailer 7 rend les helpers de langue statiques: aucun consommateur Auth ou
+MelodyQuest ne les surcharge. Aucun changement de contrat HTTP ni de schema DB.
+Ce vendor sert aussi aux APIs voisines, notamment MelodyQuest; toute mise a
+jour doit etre testee avant son remplacement. Ne pas lancer Composer en PROD.
+
 Dependances runtime:
 
 - `P:\PROD\API\core` via `Module-ShinedeCore-PHP` pour
@@ -432,6 +441,8 @@ $env:GIT_CONFIG_COUNT='1'
 $env:GIT_CONFIG_KEY_0='safe.directory'
 $env:GIT_CONFIG_VALUE_0='*'
 composer validate --no-check-publish --working-dir='P:\DEV\GitHub\Module-Auth-API'
+composer audit --no-dev
+php -d extension=pdo_sqlite tests/dependencies.php
 ```
 
 Controle Git:
@@ -484,6 +495,27 @@ Preserver en PROD:
 - `vendor/`
 - logs ou fichiers generes si presents
 
+Exception pour une mise a jour explicitement demandee des dependances:
+
+1. Modifier les contraintes dans `composer.json`, puis lancer `composer update
+   --no-dev --prefer-dist --no-interaction --no-scripts` en DEV. Versionner le
+   `composer.lock`; pour reproduire une livraison utiliser `composer install
+   --no-dev --prefer-dist --no-interaction --no-scripts`.
+2. Executer les checks Composer, le lint et `tests/dependencies.php` (SQLite en
+   memoire, configuration factice, aucun acces DB reel et aucun mail envoye).
+3. Preparer un dossier neuf hors PROD avec
+   `./scripts/build-vendor-runtime.ps1 -OutputDirectory P:\DEV\Temp\auth-vendor-<release>`.
+   L'allowlist conserve PHP, stubs, langues PHPMailer, licences et metadata
+   runtime Composer; elle exclut docs, tests, exemples et outils de paquets.
+4. Commit/push avant livraison. Garder une copie de retour arriere de l'ancien
+   `vendor` hors PROD, puis remplacer le dossier par l'artefact prepare, sans
+   toucher `.env`, aux sources applicatives ou aux donnees. Verifier aussitot
+   les endpoints Auth et consommateurs; restaurer l'ancien vendor si echec.
+
+Les tests automatises couvrent la lecture Dotenv, les requetes Medoo usuelles,
+le vrai SessionService et la preparation MIME de tous les modeles Auth. Ils ne
+remplacent pas un test de livraison SMTP reelle ou de connexion multi-sites.
+
 Ne pas synchroniser `README.md`, `AGENTS.md`, `.env.example`, `.gitignore` ou
 `sql/` lors d'une simple mise a jour runtime.
 
@@ -520,7 +552,8 @@ Pour les futures integrations inter-projets, preferer ajouter un `trace_id` ou
 
 ## Limites connues
 
-- Pas de framework de tests automatise configure.
+- Pas de framework de tests externe; `tests/dependencies.php` fournit les
+  checks isoles de compatibilite des dependances.
 - `sql/001_auth_prefix_tables.sql` est historique et non idempotente.
 - Le snapshot `project_access` est explicite dans le code et doit etre mis a
   jour volontairement quand un nouveau projet doit apparaitre cote frontend.

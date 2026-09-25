@@ -33,6 +33,11 @@ perimetre: `Module-ShinedeCore-PHP`, `Module-Auth-Core`, `Module-Auth-React`.
 - Travailler sur `main`.
 - Faire `git pull --rebase` avant de modifier.
 - Ne jamais commit `.env`, `vendor/`, logs, caches ou secrets.
+- Versionner `composer.lock`. Installer depuis ce lock en DEV; PHP minimum 8.1.
+- Pour les mises a jour de dependances explicitement demandees, tester avec
+  `php -d extension=pdo_sqlite tests/dependencies.php` et `composer audit --no-dev`.
+  Preparer le vendor public avec `scripts/build-vendor-runtime.ps1`, jamais en
+  copiant les outils/docs/tests des paquets. Voir la procedure du README.
 - Ne jamais recopier de secret depuis `P:\DEV\Access`.
 - Garder les reponses API au format `{ success, data, error }`.
 - Garder les actions HTTP historiques en `camelCase`.
@@ -93,6 +98,9 @@ Preserver en PROD:
 - `.env`
 - `vendor/`
 - logs ou fichiers generes
+
+Le vendor peut etre remplace lors d'une mise a jour de dependances autorisee,
+avec tests, commit/push et copie de retour arriere hors PROD. Preserver `.env`.
 
 Ne pas copier `README.md`, `AGENTS.md`, `sql/`, `.env.example`, `.gitignore`,
 `.git`, tests, caches ou brouillons dans `P:\PROD\API\auth`.
