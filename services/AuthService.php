@@ -195,8 +195,20 @@ class AuthService
             $roles[$projectCode] = $access->getUserProjectRoleKeys($userId, $projectCode);
         }
 
+        $isGlobalAdmin = $access->isGlobalAdmin($userId);
+        $canWake = $isGlobalAdmin;
+        if (!$canWake) {
+            foreach ($access->getUserProjectPermissionKeys($userId, 'wake') as $permissionKey) {
+                if (preg_match('/\Adevices\.([1-9][0-9]{0,9})\.wake\z/', $permissionKey, $matches) === 1
+                    && (int)$matches[1] <= 4294967295) {
+                    $canWake = true;
+                    break;
+                }
+            }
+        }
+
         return [
-            'is_global_admin' => $access->isGlobalAdmin($userId),
+            'is_global_admin' => $isGlobalAdmin,
             'roles' => $roles,
             'permissions' => [
                 'auth' => [
@@ -212,7 +224,7 @@ class AuthService
                     'files_manage' => $access->hasPermission($userId, 'box', 'files.manage'),
                 ],
                 'wake' => [
-                    'devices_wake' => $access->hasPermission($userId, 'wake', 'devices.wake'),
+                    'devices_wake' => $canWake,
                     'devices_shutdown' => $access->hasPermission($userId, 'wake', 'devices.shutdown'),
                     'devices_manage' => $access->hasPermission($userId, 'wake', 'devices.manage'),
                     'users_manage' => $access->hasPermission($userId, 'wake', 'users.manage'),

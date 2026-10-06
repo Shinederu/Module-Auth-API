@@ -254,7 +254,8 @@ Permissions actuellement projetees:
 - `main.announcements.manage` -> `permissions.main.announcements_manage`
 - `melodyquest.catalog.manage` -> `permissions.melodyquest.catalog_manage`
 - `box.files.manage` -> `permissions.box.files_manage`
-- `wake.devices.wake` -> `permissions.wake.devices_wake`
+- au moins une permission active `wake.devices.<id>.wake`, ou super-admin ->
+  `permissions.wake.devices_wake`
 - `wake.devices.shutdown` -> `permissions.wake.devices_shutdown`
 - `wake.devices.manage` -> `permissions.wake.devices_manage`
 - `wake.users.manage` -> `permissions.wake.users_manage`
@@ -263,6 +264,30 @@ Le snapshot liste uniquement les produits actifs `core`, `auth`, `main`,
 `melodyquest`, `box` et `wake`. `arcadia` est archive et `corelink` est la
 passerelle technique de l'agent Wake; aucun des deux n'est projete comme produit
 utilisateur.
+
+Depuis le 2026-10-06, `devices_wake` est un indicateur agrege: il ne donne
+jamais acces a toutes les machines. Seules les cles exactes
+`devices.<id positif de 1 a 4294967295>.wake` sont prises en compte;
+`devices.wake` historique
+ne compte plus. Les anciens acces ne sont pas repris automatiquement. Les
+autres flags et le bypass global restent inchanges. Wake filtre lui-meme les
+machines et les commandes; Auth ne lit pas les tables metier `wake_*`.
+Les cles effectives sont obtenues par
+`ProjectAccessService::getUserProjectPermissionKeys()` dans le module Core.
+
+Deployer `Module-ShinedeCore-PHP/services/ProjectAccessService.php` avec cette
+methode avant ce consommateur Auth. Le panneau domaine existant `/permissions`
+liste automatiquement les nouvelles permissions et les roles `device_<id>`.
+
+Test isole du snapshot, sans bootstrap runtime, `.env`, reseau ni DB reelle:
+
+```powershell
+php tests/wake-permissions.php
+```
+
+Ce test charge la declaration reelle de `AuthService`, sans ses includes de
+production, puis injecte un faux service d'acces. Il couvre refus du droit
+global historique, cles invalides, acces par ID, flags voisins et super-admin.
 
 ## Base de donnees
 
